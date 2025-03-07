@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Pole -->
+  <rect x="16" y="8" width="4" height="48" fill="#333333" />
+  
+  <!-- Base -->
+  <rect x="10" y="52" width="16" height="4" rx="1" fill="#333333" />
+  
+  <!-- Flag -->
+  <path d="M20 8 L48 16 L20 24 Z" fill="#FF0000" />
+</svg>

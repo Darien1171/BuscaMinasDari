@@ -59,5 +59,122 @@ namespace BuscaMinasDari.Resources.Strings {
                 resourceCulture = value;
             }
         }
+        
+        /// <summary>
+        ///   Busca una cadena traducida similar a Minesweeper.
+        /// </summary>
+        internal static string AppTitle {
+            get {
+                return ResourceManager.GetString("AppTitle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Busca una cadena traducida similar a Easy.
+        /// </summary>
+        internal static string Easy {
+            get {
+                return ResourceManager.GetString("Easy", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Busca una cadena traducida similar a BOOM! Game over..
+        /// </summary>
+        internal static string GameOverLose {
+            get {
+                return ResourceManager.GetString("GameOverLose", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Busca una cadena traducida similar a You win! Great job!.
+        /// </summary>
+        internal static string GameOverWin {
+            get {
+                return ResourceManager.GetString("GameOverWin", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Busca una cadena traducida similar a Hard.
+        /// </summary>
+        internal static string Hard {
+            get {
+                return ResourceManager.GetString("Hard", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Busca una cadena traducida similar a Tap to reveal a cell. Long press to flag a mine..
+        /// </summary>
+        internal static string Instructions {
+            get {
+                return ResourceManager.GetString("Instructions", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Busca una cadena traducida similar a Medium.
+        /// </summary>
+        internal static string Medium {
+            get {
+                return ResourceManager.GetString("Medium", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Busca una cadena traducida similar a Mine Count:.
+        /// </summary>
+        internal static string MineCount {
+            get {
+                return ResourceManager.GetString("MineCount", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Busca una cadena traducida similar a Mines: {0}.
+        /// </summary>
+        internal static string Mines {
+            get {
+                return ResourceManager.GetString("Mines", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Busca una cadena traducida similar a New Game.
+        /// </summary>
+        internal static string NewGame {
+            get {
+                return ResourceManager.GetString("NewGame", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Busca una cadena traducida similar a Dark Mode.
+        /// </summary>
+        internal static string ThemeDark {
+            get {
+                return ResourceManager.GetString("ThemeDark", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Busca una cadena traducida similar a Light Mode.
+        /// </summary>
+        internal static string ThemeLight {
+            get {
+                return ResourceManager.GetString("ThemeLight", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Busca una cadena traducida similar a Time: {0}.
+        /// </summary>
+        internal static string Time {
+            get {
+                return ResourceManager.GetString("Time", resourceCulture);
+            }
+        }
     }
 }

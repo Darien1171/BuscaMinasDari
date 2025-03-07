@@ -118,42 +118,42 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="AppTitle" xml:space="preserve">
-    <value>Minesweeper</value>
+    <value>Buscamina</value>
   </data>
   <data name="NewGame" xml:space="preserve">
-    <value>New Game</value>
+    <value>Nueva Partida</value>
   </data>
   <data name="Easy" xml:space="preserve">
-    <value>Easy</value>
+    <value>Facil</value>
   </data>
   <data name="Medium" xml:space="preserve">
-    <value>Medium</value>
+    <value>Medio</value>
   </data>
   <data name="Hard" xml:space="preserve">
-    <value>Hard</value>
+    <value>Dificil</value>
   </data>
   <data name="Mines" xml:space="preserve">
-    <value>Mines: {0}</value>
+    <value>Minas: {0}</value>
   </data>
   <data name="Time" xml:space="preserve">
-    <value>Time: {0}</value>
+    <value>Tiempo: {0}</value>
   </data>
   <data name="GameOverWin" xml:space="preserve">
-    <value>You win! Great job!</value>
+    <value>¡Has ganado! ¡Buen trabajo!</value>
   </data>
   <data name="GameOverLose" xml:space="preserve">
-    <value>BOOM! Game over.</value>
+    <value>¡BOOM! Fin del juego.</value>
   </data>
   <data name="ThemeDark" xml:space="preserve">
-    <value>Dark Mode</value>
+    <value>Modo Oscuro</value>
   </data>
   <data name="ThemeLight" xml:space="preserve">
-    <value>Light Mode</value>
+    <value>Modo Claro</value>
   </data>
   <data name="MineCount" xml:space="preserve">
-    <value>Mine Count:</value>
+    <value>Cantidad de Minas:</value>
   </data>
   <data name="Instructions" xml:space="preserve">
-    <value>Tap to reveal a cell. Long press to flag a mine.</value>
+    <value>Toca para revelar una celda. Mantén pulsado para marcar una mina.</value>
   </data>
 </root>

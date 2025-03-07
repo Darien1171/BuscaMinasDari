@@ -25,6 +25,7 @@
     <Color x:Key="Gray400">#919191</Color>
     <Color x:Key="Gray500">#6E6E6E</Color>
     <Color x:Key="Gray600">#404040</Color>
+    <Color x:Key="Gray700">#303030</Color>
     <Color x:Key="Gray900">#212121</Color>
     <Color x:Key="Gray950">#141414</Color>
 
@@ -40,6 +41,41 @@
     <SolidColorBrush x:Key="Gray400Brush" Color="{StaticResource Gray400}"/>
     <SolidColorBrush x:Key="Gray500Brush" Color="{StaticResource Gray500}"/>
     <SolidColorBrush x:Key="Gray600Brush" Color="{StaticResource Gray600}"/>
+    <SolidColorBrush x:Key="Gray700Brush" Color="{StaticResource Gray700}"/>
     <SolidColorBrush x:Key="Gray900Brush" Color="{StaticResource Gray900}"/>
     <SolidColorBrush x:Key="Gray950Brush" Color="{StaticResource Gray950}"/>
+
+    <!-- Colores para Buscaminas -->
+    <Color x:Key="CellUnrevealed">#CECECE</Color>
+    <Color x:Key="CellUnrevealedDark">#3C3C3C</Color>
+    <Color x:Key="CellRevealed">#E6E6E6</Color>
+    <Color x:Key="CellRevealedDark">#4A4A4A</Color>
+    <Color x:Key="CellFlagged">#E0E0E0</Color>
+    <Color x:Key="CellFlaggedDark">#4C4C4C</Color>
+    <Color x:Key="MineRed">#FF3333</Color>
+    <Color x:Key="Number1">#0000FF</Color>
+    <!-- Azul -->
+    <Color x:Key="Number2">#007F00</Color>
+    <!-- Verde -->
+    <Color x:Key="Number3">#FF0000</Color>
+    <!-- Rojo -->
+    <Color x:Key="Number4">#00007F</Color>
+    <!-- Azul oscuro -->
+    <Color x:Key="Number5">#7F3300</Color>
+    <!-- Marrón -->
+    <Color x:Key="Number6">#008080</Color>
+    <!-- Cyan -->
+    <Color x:Key="Number7">#000000</Color>
+    <!-- Negro -->
+    <Color x:Key="Number8">#808080</Color>
+    <!-- Gris -->
+    <Color x:Key="WinGreen">#00AA00</Color>
+
+    <!-- Pinceles para Buscaminas -->
+    <SolidColorBrush x:Key="CellUnrevealedBrush" Color="{StaticResource CellUnrevealed}"/>
+    <SolidColorBrush x:Key="CellUnrevealedDarkBrush" Color="{StaticResource CellUnrevealedDark}"/>
+    <SolidColorBrush x:Key="CellRevealedBrush" Color="{StaticResource CellRevealed}"/>
+    <SolidColorBrush x:Key="CellRevealedDarkBrush" Color="{StaticResource CellRevealedDark}"/>
+    <SolidColorBrush x:Key="MineRedBrush" Color="{StaticResource MineRed}"/>
+    <SolidColorBrush x:Key="WinGreenBrush" Color="{StaticResource WinGreen}"/>
 </ResourceDictionary>
