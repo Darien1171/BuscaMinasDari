@@ -1,33 +1,37 @@
-﻿using Microsoft.Maui.Dispatching;
+﻿using System.ComponentModel;
+using System.Runtime.CompilerServices;
 
 namespace BuscaMinasDari.Models
 {
-    public class GameBoard : BindableObject
+    public class GameBoard : INotifyPropertyChanged
     {
-        private MinesweeperCell[,] _cells = new MinesweeperCell[0, 0]; // Inicializado para evitar null
-        private GameState _gameState;
+        private int _rows;
+        private int _columns;
         private int _mineCount;
-        private int _flaggedCount;
+        private int _flagCount;
         private int _revealedCount;
-        private int _seconds;
-        private bool _isTimerRunning;
-        private IDispatcherTimer? _timer; // Marcado como nullable
+        private GameState _gameState = GameState.Playing;
+        private DateTime _startTime;
+        private string _formattedTime = "00:00";
+        private System.Timers.Timer _timer;
 
-        public int Rows { get; private set; }
-        public int Columns { get; private set; }
-        public MinesweeperCell[,] Cells => _cells;
+        public MinesweeperCell[,] Cells { get; private set; }
+
+        public int Rows => _rows;
+        public int Columns => _columns;
+        public int MineCount => _mineCount;
+        public int RemainingMines => _mineCount - _flagCount;
 
         public GameState GameState
         {
             get => _gameState;
-            set
+            private set
             {
                 if (_gameState != value)
                 {
                     _gameState = value;
                     OnPropertyChanged();
-
-                    if (value == GameState.Lost || value == GameState.Won)
+                    if (_gameState != GameState.Playing)
                     {
                         StopTimer();
                     }
@@ -35,183 +39,190 @@ namespace BuscaMinasDari.Models
             }
         }
 
-        public int MineCount
+        public string FormattedTime
         {
-            get => _mineCount;
+            get => _formattedTime;
             private set
             {
-                if (_mineCount != value)
+                if (_formattedTime != value)
                 {
-                    _mineCount = value;
+                    _formattedTime = value;
                     OnPropertyChanged();
                 }
             }
         }
-
-        public int RemainingMines
-        {
-            get => _mineCount - _flaggedCount;
-        }
-
-        public int Seconds
-        {
-            get => _seconds;
-            private set
-            {
-                if (_seconds != value)
-                {
-                    _seconds = value;
-                    OnPropertyChanged();
-                    OnPropertyChanged(nameof(FormattedTime));
-                }
-            }
-        }
-
-        public string FormattedTime => TimeSpan.FromSeconds(Seconds).ToString(@"mm\:ss");
 
         public GameBoard()
         {
-            // Inicializamos con un tablero vacío para evitar excepciones
-            Rows = 0;
-            Columns = 0;
-            _cells = new MinesweeperCell[0, 0];
-            _gameState = GameState.NotStarted;
+            _timer = new System.Timers.Timer(1000);
+            _timer.Elapsed += (s, e) => {
+                // Asegurarnos de que actualizamos el tiempo en el hilo de la UI
+                MainThread.BeginInvokeOnMainThread(UpdateTime);
+            };
         }
 
         public void Initialize(int rows, int columns, Difficulty difficulty)
         {
-            Rows = rows;
-            Columns = columns;
-            _cells = new MinesweeperCell[rows, columns];
+            _rows = rows;
+            _columns = columns;
+
+            // Establecer cantidad de minas según dificultad
+            switch (difficulty)
+            {
+                case Difficulty.Easy:
+                    _mineCount = (int)(rows * columns * 0.1); // 10% minas
+                    break;
+                case Difficulty.Medium:
+                    _mineCount = (int)(rows * columns * 0.15); // 15% minas
+                    break;
+                case Difficulty.Hard:
+                    _mineCount = (int)(rows * columns * 0.2); // 20% minas
+                    break;
+            }
+
+            _flagCount = 0;
             _revealedCount = 0;
-            _flaggedCount = 0;
-            Seconds = 0;
+            _gameState = GameState.Playing;
 
-            // Create cells
+            // Inicializar celdas
+            Cells = new MinesweeperCell[rows, columns];
             for (int r = 0; r < rows; r++)
             {
                 for (int c = 0; c < columns; c++)
                 {
-                    _cells[r, c] = new MinesweeperCell { Row = r, Column = c };
-                }
-            }
-
-            // Set mines based on difficulty
-            int minePercentage = difficulty switch
-            {
-                Difficulty.Easy => 12,    // 12% of cells have mines
-                Difficulty.Medium => 16,  // 16% of cells have mines
-                Difficulty.Hard => 20,    // 20% of cells have mines
-                _ => 15
-            };
-
-            int totalCells = rows * columns;
-            MineCount = (int)Math.Ceiling(totalCells * minePercentage / 100.0);
-
-            // Place mines randomly
-            Random random = new Random();
-            int minesPlaced = 0;
-
-            while (minesPlaced < MineCount)
-            {
-                int r = random.Next(rows);
-                int c = random.Next(columns);
-
-                if (!_cells[r, c].IsMine)
-                {
-                    _cells[r, c].IsMine = true;
-                    minesPlaced++;
-                }
-            }
-
-            // Calculate adjacent mines for each cell
-            for (int r = 0; r < rows; r++)
-            {
-                for (int c = 0; c < columns; c++)
-                {
-                    if (!_cells[r, c].IsMine)
+                    Cells[r, c] = new MinesweeperCell
                     {
-                        _cells[r, c].AdjacentMines = CountAdjacentMines(r, c);
-                    }
+                        Row = r,
+                        Column = c,
+                        IsRevealed = false,
+                        IsFlagged = false,
+                        IsMine = false,
+                        AdjacentMines = 0
+                    };
                 }
             }
 
-            GameState = GameState.NotStarted;
+            // Colocar minas aleatoriamente
+            PlaceMines();
+
+            // Calcular minas adyacentes para cada celda
+            CalculateAdjacentMines();
+
+            // Reiniciar temporizador
+            _startTime = DateTime.Now;
+            FormattedTime = "00:00";
+            _timer.Start();
+
             OnPropertyChanged(nameof(RemainingMines));
         }
 
-        private int CountAdjacentMines(int row, int column)
+        private void PlaceMines()
         {
-            int count = 0;
+            Random random = new Random();
+            int minesPlaced = 0;
 
-            for (int r = Math.Max(0, row - 1); r <= Math.Min(Rows - 1, row + 1); r++)
+            while (minesPlaced < _mineCount)
             {
-                for (int c = Math.Max(0, column - 1); c <= Math.Min(Columns - 1, column + 1); c++)
+                int r = random.Next(_rows);
+                int c = random.Next(_columns);
+
+                if (!Cells[r, c].IsMine)
                 {
-                    if ((r != row || c != column) && _cells[r, c].IsMine)
-                    {
-                        count++;
-                    }
+                    Cells[r, c].IsMine = true;
+                    minesPlaced++;
                 }
             }
+        }
 
-            return count;
+        private void CalculateAdjacentMines()
+        {
+            for (int r = 0; r < _rows; r++)
+            {
+                for (int c = 0; c < _columns; c++)
+                {
+                    if (Cells[r, c].IsMine)
+                        continue;
+
+                    int count = 0;
+
+                    // Verificar las 8 celdas adyacentes
+                    for (int dr = -1; dr <= 1; dr++)
+                    {
+                        for (int dc = -1; dc <= 1; dc++)
+                        {
+                            if (dr == 0 && dc == 0)
+                                continue;
+
+                            int nr = r + dr;
+                            int nc = c + dc;
+
+                            if (nr >= 0 && nr < _rows && nc >= 0 && nc < _columns && Cells[nr, nc].IsMine)
+                            {
+                                count++;
+                            }
+                        }
+                    }
+
+                    Cells[r, c].AdjacentMines = count;
+                }
+            }
         }
 
         public void RevealCell(int row, int column)
         {
-            if (GameState == GameState.Lost || GameState == GameState.Won)
-                return;
+            System.Diagnostics.Debug.WriteLine($"RevealCell llamado: Fila {row}, Columna {column}");
 
-            var cell = _cells[row, column];
-
-            if (cell.IsRevealed || cell.IsFlagged)
-                return;
-
-            // Start timer on first reveal
-            if (GameState == GameState.NotStarted)
+            // Ignorar si el juego terminó o la celda ya está revelada o marcada
+            if (GameState != GameState.Playing ||
+                Cells[row, column].IsRevealed ||
+                Cells[row, column].IsFlagged)
             {
-                GameState = GameState.Playing;
-                StartTimer();
+                System.Diagnostics.Debug.WriteLine("RevealCell: Acción ignorada (juego terminado o celda ya revelada/marcada)");
+                return;
             }
 
-            // Hit a mine
-            if (cell.IsMine)
+            // Revelar la celda
+            Cells[row, column].IsRevealed = true;
+            _revealedCount++;
+            System.Diagnostics.Debug.WriteLine($"Celda revelada. Es mina: {Cells[row, column].IsMine}, Minas adyacentes: {Cells[row, column].AdjacentMines}");
+
+            // Verificar si es una mina
+            if (Cells[row, column].IsMine)
             {
+                System.Diagnostics.Debug.WriteLine("¡Es una mina! Fin del juego.");
+                // Fin del juego - revelar todas las minas
                 RevealAllMines();
                 GameState = GameState.Lost;
                 return;
             }
 
-            // Reveal the cell
-            cell.IsRevealed = true;
-            _revealedCount++;
-
-            // Auto-reveal adjacent cells if this is an empty cell
-            if (cell.IsEmpty)
+            // Si es una celda sin minas adyacentes, revelar celdas adyacentes recursivamente
+            if (Cells[row, column].AdjacentMines == 0)
             {
+                System.Diagnostics.Debug.WriteLine("Celda sin minas adyacentes. Revelando adyacentes...");
                 RevealAdjacentCells(row, column);
             }
 
-            // Check for win
-            CheckForWin();
+            // Verificar si el jugador ha ganado
+            CheckWinCondition();
         }
 
         private void RevealAdjacentCells(int row, int column)
         {
-            // Reveal all 8 adjacent cells if they are not flagged and not revealed
-            for (int r = Math.Max(0, row - 1); r <= Math.Min(Rows - 1, row + 1); r++)
+            for (int dr = -1; dr <= 1; dr++)
             {
-                for (int c = Math.Max(0, column - 1); c <= Math.Min(Columns - 1, column + 1); c++)
+                for (int dc = -1; dc <= 1; dc++)
                 {
-                    if (r == row && c == column)
+                    if (dr == 0 && dc == 0)
                         continue;
 
-                    var adjacentCell = _cells[r, c];
-                    if (!adjacentCell.IsRevealed && !adjacentCell.IsFlagged)
+                    int nr = row + dr;
+                    int nc = column + dc;
+
+                    if (nr >= 0 && nr < _rows && nc >= 0 && nc < _columns &&
+                        !Cells[nr, nc].IsRevealed && !Cells[nr, nc].IsFlagged)
                     {
-                        // Recursively reveal
-                        RevealCell(r, c);
+                        RevealCell(nr, nc);
                     }
                 }
             }
@@ -219,86 +230,106 @@ namespace BuscaMinasDari.Models
 
         public void ToggleFlag(int row, int column)
         {
-            if (GameState == GameState.Lost || GameState == GameState.Won)
-                return;
+            System.Diagnostics.Debug.WriteLine($"ToggleFlag llamado: Fila {row}, Columna {column}");
 
-            if (GameState == GameState.NotStarted)
+            // Ignorar si el juego terminó o la celda ya está revelada
+            if (GameState != GameState.Playing || Cells[row, column].IsRevealed)
             {
-                GameState = GameState.Playing;
-                StartTimer();
+                System.Diagnostics.Debug.WriteLine("ToggleFlag: Acción ignorada (juego terminado o celda ya revelada)");
+                return;
             }
 
-            var cell = _cells[row, column];
+            // Alternar bandera
+            Cells[row, column].IsFlagged = !Cells[row, column].IsFlagged;
 
-            if (cell.IsRevealed)
-                return;
+            // Actualizar contador de banderas
+            if (Cells[row, column].IsFlagged)
+                _flagCount++;
+            else
+                _flagCount--;
 
-            cell.IsFlagged = !cell.IsFlagged;
-            _flaggedCount += cell.IsFlagged ? 1 : -1;
+            System.Diagnostics.Debug.WriteLine($"Bandera alternada. Estado actual: {Cells[row, column].IsFlagged}. Banderas colocadas: {_flagCount}");
+
             OnPropertyChanged(nameof(RemainingMines));
 
-            // Check for win
-            CheckForWin();
+            // Verificar si el jugador ha ganado
+            CheckWinCondition();
         }
 
         private void RevealAllMines()
         {
-            for (int r = 0; r < Rows; r++)
+            for (int r = 0; r < _rows; r++)
             {
-                for (int c = 0; c < Columns; c++)
+                for (int c = 0; c < _columns; c++)
                 {
-                    if (_cells[r, c].IsMine)
+                    if (Cells[r, c].IsMine)
                     {
-                        _cells[r, c].IsRevealed = true;
+                        Cells[r, c].IsRevealed = true;
                     }
                 }
             }
         }
 
-        private void CheckForWin()
+        private void CheckWinCondition()
         {
-            // Win condition: all non-mine cells are revealed
-            if (_revealedCount == (Rows * Columns) - MineCount)
+            // Condiciones de victoria:
+            // 1. Todas las celdas sin mina están reveladas, O
+            // 2. Todas las celdas con mina están marcadas y ninguna celda sin mina está marcada
+
+            // Verificar condición 1
+            if (_revealedCount == (_rows * _columns) - _mineCount)
             {
-                // Mark all mines as flagged
-                for (int r = 0; r < Rows; r++)
+                System.Diagnostics.Debug.WriteLine("¡Victoria! Todas las celdas sin mina reveladas.");
+                GameState = GameState.Won;
+                return;
+            }
+
+            // Verificar condición 2
+            bool allMinesFlagged = true;
+            bool anyNonMineFlagged = false;
+
+            for (int r = 0; r < _rows; r++)
+            {
+                for (int c = 0; c < _columns; c++)
                 {
-                    for (int c = 0; c < Columns; c++)
+                    if (Cells[r, c].IsMine && !Cells[r, c].IsFlagged)
                     {
-                        if (_cells[r, c].IsMine && !_cells[r, c].IsFlagged)
-                        {
-                            _cells[r, c].IsFlagged = true;
-                        }
+                        allMinesFlagged = false;
+                    }
+
+                    if (!Cells[r, c].IsMine && Cells[r, c].IsFlagged)
+                    {
+                        anyNonMineFlagged = true;
                     }
                 }
+            }
 
-                _flaggedCount = MineCount;
-                OnPropertyChanged(nameof(RemainingMines));
+            if (allMinesFlagged && !anyNonMineFlagged)
+            {
+                System.Diagnostics.Debug.WriteLine("¡Victoria! Todas las minas correctamente marcadas.");
                 GameState = GameState.Won;
             }
         }
 
-        public void StartTimer()
+        private void UpdateTime()
         {
-            if (_isTimerRunning)
-                return;
-
-            _isTimerRunning = true;
-            _timer = Application.Current.Dispatcher.CreateTimer();
-            _timer.Interval = TimeSpan.FromSeconds(1);
-            _timer.Tick += (s, e) => {
-                Seconds++;
-            };
-            _timer.Start();
+            if (GameState == GameState.Playing)
+            {
+                TimeSpan elapsed = DateTime.Now - _startTime;
+                FormattedTime = $"{elapsed.Minutes:00}:{elapsed.Seconds:00}";
+            }
         }
 
-        public void StopTimer()
+        private void StopTimer()
         {
-            if (!_isTimerRunning || _timer == null)
-                return;
-
             _timer.Stop();
-            _isTimerRunning = false;
+        }
+
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
     }
 }

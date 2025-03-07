@@ -1,27 +1,17 @@
-﻿namespace BuscaMinasDari.Models
+﻿using System.ComponentModel;
+using System.Runtime.CompilerServices;
+
+namespace BuscaMinasDari.Models
 {
-    public class MinesweeperCell : BindableObject
+    public class MinesweeperCell : INotifyPropertyChanged
     {
-        private bool _isMine;
         private bool _isRevealed;
         private bool _isFlagged;
+        private bool _isMine;
         private int _adjacentMines;
 
         public int Row { get; set; }
         public int Column { get; set; }
-
-        public bool IsMine
-        {
-            get => _isMine;
-            set
-            {
-                if (_isMine != value)
-                {
-                    _isMine = value;
-                    OnPropertyChanged();
-                }
-            }
-        }
 
         public bool IsRevealed
         {
@@ -32,6 +22,8 @@
                 {
                     _isRevealed = value;
                     OnPropertyChanged();
+                    OnPropertyChanged(nameof(ShowNumber));
+                    OnPropertyChanged(nameof(ShowMine));
                 }
             }
         }
@@ -49,6 +41,20 @@
             }
         }
 
+        public bool IsMine
+        {
+            get => _isMine;
+            set
+            {
+                if (_isMine != value)
+                {
+                    _isMine = value;
+                    OnPropertyChanged();
+                    OnPropertyChanged(nameof(ShowMine));
+                }
+            }
+        }
+
         public int AdjacentMines
         {
             get => _adjacentMines;
@@ -58,10 +64,20 @@
                 {
                     _adjacentMines = value;
                     OnPropertyChanged();
+                    OnPropertyChanged(nameof(ShowNumber));
                 }
             }
         }
 
-        public bool IsEmpty => !IsMine && AdjacentMines == 0;
+        // Propiedades calculadas para la UI
+        public bool ShowNumber => IsRevealed && !IsMine && AdjacentMines > 0;
+        public bool ShowMine => IsRevealed && IsMine;
+
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
     }
 }

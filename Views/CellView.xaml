@@ -2,30 +2,43 @@
 <ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="BuscaMinasDari.Views.CellView">
-    <Frame x:Name="CellFrame" 
-           Style="{StaticResource CellFrame}">
-        <Grid>
-            <Label x:Name="ContentLabel"
-                   HorizontalOptions="Center"
-                   VerticalOptions="Center"
-                   FontAttributes="Bold"
-                   FontSize="18"
-                   Text=""
-                   IsVisible="False" />
-            <Image x:Name="FlagImage"
-                   HorizontalOptions="Center"
-                   VerticalOptions="Center"
-                   IsVisible="False"
-                   WidthRequest="20"
-                   HeightRequest="20"
-                   Source="flag.png" />
-            <Image x:Name="MineImage"
-                   HorizontalOptions="Center"
-                   VerticalOptions="Center"
-                   IsVisible="False"
-                   WidthRequest="20"
-                   HeightRequest="20"
-                   Source="mine.png" />
-        </Grid>
-    </Frame>
+    <Grid Padding="1">
+        <Border x:Name="CellBorder"
+                StrokeThickness="1" 
+                Stroke="{AppThemeBinding Light={StaticResource Gray300}, Dark={StaticResource Gray600}}"
+                StrokeShape="RoundRectangle 4,4,4,4"
+                BackgroundColor="{AppThemeBinding Light={StaticResource CellUnrevealed}, Dark={StaticResource CellUnrevealedDark}}">
+            <Grid HorizontalOptions="Fill" 
+                  VerticalOptions="Fill"
+                  WidthRequest="40"
+                  HeightRequest="40">
+
+                <!-- Número (cuando la celda está revelada y tiene minas adyacentes) -->
+                <Label x:Name="NumberLabel"
+                       IsVisible="False"
+                       HorizontalOptions="Center"
+                       VerticalOptions="Center"
+                       FontAttributes="Bold"
+                       FontSize="18" />
+
+                <!-- Mina (cuando la celda está revelada y es una mina) -->
+                <Image x:Name="MineImage"
+                       Source="mine.svg"
+                       IsVisible="False"
+                       HeightRequest="30"
+                       WidthRequest="30"
+                       HorizontalOptions="Center"
+                       VerticalOptions="Center"/>
+
+                <!-- Bandera (cuando la celda está marcada) -->
+                <Image x:Name="FlagImage"
+                       Source="flag.svg"
+                       IsVisible="False"
+                       HeightRequest="30"
+                       WidthRequest="30"
+                       HorizontalOptions="Center"
+                       VerticalOptions="Center"/>
+            </Grid>
+        </Border>
+    </Grid>
 </ContentView>

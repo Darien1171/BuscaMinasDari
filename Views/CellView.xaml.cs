@@ -1,114 +1,124 @@
 using BuscaMinasDari.Models;
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
 
 namespace BuscaMinasDari.Views
 {
-    public partial class CellView : ContentView
+    public partial class CellView : ContentView, INotifyPropertyChanged
     {
-        private static readonly Dictionary<int, Color> AdjacentColorMap = new()
-        {
-            { 1, Colors.Blue },
-            { 2, Colors.Green },
-            { 3, Colors.Red },
-            { 4, Colors.DarkBlue },
-            { 5, Colors.Brown },
-            { 6, Colors.Cyan },
-            { 7, Colors.Black },
-            { 8, Colors.DarkGray }
-        };
+        // La instancia de la celda
+        private MinesweeperCell _cell;
 
+        // Propiedad bindable para la celda
         public static readonly BindableProperty CellProperty =
-            BindableProperty.Create(nameof(Cell), typeof(MinesweeperCell), typeof(CellView), null, propertyChanged: OnCellChanged);
+            BindableProperty.Create(nameof(Cell), typeof(MinesweeperCell), typeof(CellView), null,
+                propertyChanged: OnCellChanged);
 
-        public MinesweeperCell? Cell
+        public MinesweeperCell Cell
         {
-            get => (MinesweeperCell?)GetValue(CellProperty);
-            set => SetValue(CellProperty, value);
+            get => _cell;
+            set
+            {
+                if (_cell != value)
+                {
+                    // Desuscribirse del evento del objeto antiguo si existe
+                    if (_cell != null)
+                    {
+                        _cell.PropertyChanged -= OnModelPropertyChanged;
+                    }
+
+                    _cell = value;
+
+                    // Suscribirse al evento del nuevo objeto
+                    if (_cell != null)
+                    {
+                        _cell.PropertyChanged += OnModelPropertyChanged;
+                    }
+
+                    OnPropertyChanged();
+                    UpdateCellVisuals();
+                }
+            }
         }
 
+        // Constructor
         public CellView()
         {
             InitializeComponent();
         }
 
+        // Handler para cambios en la propiedad Cell
         private static void OnCellChanged(BindableObject bindable, object oldValue, object newValue)
         {
-            if (bindable is CellView view && newValue is MinesweeperCell cell)
-            {
-                view.UpdateCellVisual(cell);
-
-                // Subscribe to property changes on the cell
-                cell.PropertyChanged += (s, e) =>
-                {
-                    view.UpdateCellVisual(cell);
-                };
-            }
+            var cellView = (CellView)bindable;
+            cellView.Cell = (MinesweeperCell)newValue;
         }
 
-        public void UpdateCellVisual(MinesweeperCell? cell)
+        // Handler para cambios en las propiedades del modelo
+        private void OnModelPropertyChanged(object sender, PropertyChangedEventArgs e)
         {
-            if (cell == null)
-                return;
+            // Actualizar el aspecto visual cuando cambia cualquier propiedad de la celda
+            UpdateCellVisuals();
+        }
 
-            System.Diagnostics.Debug.WriteLine($"Actualizando celda visual: Fila {cell.Row}, Columna {cell.Column}, Revelada: {cell.IsRevealed}, Marcada: {cell.IsFlagged}, Mina: {cell.IsMine}");
+        // Actualiza los elementos visuales según el estado de la celda
+        private void UpdateCellVisuals()
+        {
+            if (_cell == null) return;
 
-            if (cell.IsRevealed)
-            {
-                // Cell is revealed
-                CellFrame.BackgroundColor = Colors.LightGray;
+            MainThread.BeginInvokeOnMainThread(() => {
+                // Actualizar el fondo del Border (ahora usando el nombre específico)
+                CellBorder.BackgroundColor = _cell.IsRevealed
+                    ? Application.Current.RequestedTheme == AppTheme.Dark
+                        ? (Color)Application.Current.Resources["CellRevealedDark"]
+                        : (Color)Application.Current.Resources["CellRevealed"]
+                    : Application.Current.RequestedTheme == AppTheme.Dark
+                        ? (Color)Application.Current.Resources["CellUnrevealedDark"]
+                        : (Color)Application.Current.Resources["CellUnrevealed"];
 
-                if (cell.IsMine)
+                // Actualizar el número
+                if (_cell.IsRevealed && !_cell.IsMine && _cell.AdjacentMines > 0)
                 {
-                    // Show mine
-                    ContentLabel.IsVisible = false;
-                    FlagImage.IsVisible = false;
-                    MineImage.IsVisible = true;
-                    CellFrame.BackgroundColor = Colors.Red;
+                    NumberLabel.Text = _cell.AdjacentMines.ToString();
+                    NumberLabel.TextColor = GetNumberColor(_cell.AdjacentMines);
+                    NumberLabel.IsVisible = true;
                 }
                 else
                 {
-                    // Show number if there are adjacent mines
-                    MineImage.IsVisible = false;
-                    FlagImage.IsVisible = false;
-
-                    if (cell.AdjacentMines > 0)
-                    {
-                        ContentLabel.Text = cell.AdjacentMines.ToString();
-
-                        if (AdjacentColorMap.ContainsKey(cell.AdjacentMines))
-                        {
-                            ContentLabel.TextColor = AdjacentColorMap[cell.AdjacentMines];
-                        }
-                        else
-                        {
-                            ContentLabel.TextColor = Colors.Black;
-                        }
-
-                        ContentLabel.IsVisible = true;
-                    }
-                    else
-                    {
-                        ContentLabel.IsVisible = false;
-                    }
+                    NumberLabel.IsVisible = false;
                 }
-            }
-            else if (cell.IsFlagged)
-            {
-                // Cell is flagged
-                CellFrame.BackgroundColor = Color.FromArgb("#E0E0E0");
 
-                ContentLabel.IsVisible = false;
-                MineImage.IsVisible = false;
-                FlagImage.IsVisible = true;
-            }
-            else
-            {
-                // Unrevealed cell
-                CellFrame.BackgroundColor = Color.FromArgb("#CECECE");
+                // Actualizar la mina
+                MineImage.IsVisible = _cell.IsRevealed && _cell.IsMine;
 
-                ContentLabel.IsVisible = false;
-                MineImage.IsVisible = false;
-                FlagImage.IsVisible = false;
-            }
+                // Actualizar la bandera
+                FlagImage.IsVisible = _cell.IsFlagged && !_cell.IsRevealed;
+            });
+        }
+
+        // Obtener el color según el número de minas adyacentes
+        private Color GetNumberColor(int number)
+        {
+            return number switch
+            {
+                1 => (Color)Application.Current.Resources["Number1"],
+                2 => (Color)Application.Current.Resources["Number2"],
+                3 => (Color)Application.Current.Resources["Number3"],
+                4 => (Color)Application.Current.Resources["Number4"],
+                5 => (Color)Application.Current.Resources["Number5"],
+                6 => (Color)Application.Current.Resources["Number6"],
+                7 => (Color)Application.Current.Resources["Number7"],
+                8 => (Color)Application.Current.Resources["Number8"],
+                _ => Colors.Black
+            };
+        }
+
+        // Implementación de INotifyPropertyChanged
+        public new event PropertyChangedEventHandler PropertyChanged;
+
+        protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
     }
 }

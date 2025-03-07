@@ -12,8 +12,6 @@ namespace BuscaMinasDari
         private bool _isGameOver;
         private string _gameOverMessage = string.Empty;
         private Color _gameOverColor = Colors.Transparent;
-        private DateTime _lastTapTime = DateTime.MinValue;
-        private MinesweeperCell? _lastTappedCell = null;
 
         public GameBoard GameBoard => _gameBoard;
         public ObservableCollection<MinesweeperCell> Cells => _cells;
@@ -58,6 +56,8 @@ namespace BuscaMinasDari
         }
 
         public ICommand NewGameCommand { get; private set; }
+        public ICommand CellTapCommand { get; private set; }
+        public ICommand CellDoubleTapCommand { get; private set; }
 
         public MainPage()
         {
@@ -68,6 +68,8 @@ namespace BuscaMinasDari
 
             // Create commands
             NewGameCommand = new Command<Difficulty>(StartNewGame);
+            CellTapCommand = new Command<MinesweeperCell>(RevealCell);
+            CellDoubleTapCommand = new Command<MinesweeperCell>(FlagCell);
 
             // Set up binding context
             BindingContext = this;
@@ -89,55 +91,6 @@ namespace BuscaMinasDari
 
             // Start a new game with medium difficulty
             StartNewGame(Difficulty.Medium);
-        }
-
-        // Manejadores de eventos para los gestos táctiles
-        private void OnCellTapped(object sender, TappedEventArgs e)
-        {
-            if (sender is CellView cellView && cellView.Cell != null)
-            {
-                var currentTime = DateTime.Now;
-                var cell = cellView.Cell;
-
-                // Depuración
-                System.Diagnostics.Debug.WriteLine($"Celda tocada: Fila {cell.Row}, Columna {cell.Column}");
-
-                // Si este es el segundo toque en la misma celda en menos de 300ms, lo ignoramos
-                // porque probablemente es parte de un doble toque que se manejará en OnCellDoubleTapped
-                if (_lastTappedCell == cell && (currentTime - _lastTapTime).TotalMilliseconds < 300)
-                {
-                    return;
-                }
-
-                // Actualizamos la referencia para el próximo toque
-                _lastTappedCell = cell;
-                _lastTapTime = currentTime;
-
-                // Asegurarse de que la UI muestra el cambio (retraso ligero para evitar colisión con doble toque)
-                Dispatcher.Dispatch(async () =>
-                {
-                    // Pequeño retraso para permitir que OnCellDoubleTapped se dispare si es un doble toque
-                    await Task.Delay(50);
-                    RevealCell(cell);
-                });
-            }
-        }
-
-        private void OnCellDoubleTapped(object sender, TappedEventArgs e)
-        {
-            if (sender is CellView cellView && cellView.Cell != null)
-            {
-                var cell = cellView.Cell;
-
-                // Depuración
-                System.Diagnostics.Debug.WriteLine($"Celda doble tocada: Fila {cell.Row}, Columna {cell.Column}");
-
-                // Marcar la celda
-                FlagCell(cell);
-
-                // Actualizamos para evitar que se dispare también el evento de toque simple
-                _lastTappedCell = null;
-            }
         }
 
         private void StartNewGame(Difficulty difficulty)
@@ -187,18 +140,35 @@ namespace BuscaMinasDari
             IsGameOver = false;
         }
 
-        private void RevealCell(MinesweeperCell? cell)
+        private void RevealCell(MinesweeperCell cell)
         {
-            if (cell == null)
+            if (cell == null) return;
+
+            System.Diagnostics.Debug.WriteLine($"RevealCell: Fila {cell.Row}, Columna {cell.Column}");
+
+            // Evitar procesar si el juego terminó o la celda ya está revelada o marcada
+            if (_gameBoard.GameState != GameState.Playing ||
+                cell.IsRevealed || cell.IsFlagged)
+            {
+                System.Diagnostics.Debug.WriteLine("RevealCell: Acción ignorada");
                 return;
+            }
 
             _gameBoard.RevealCell(cell.Row, cell.Column);
         }
 
-        private void FlagCell(MinesweeperCell? cell)
+        private void FlagCell(MinesweeperCell cell)
         {
-            if (cell == null)
+            if (cell == null) return;
+
+            System.Diagnostics.Debug.WriteLine($"FlagCell: Fila {cell.Row}, Columna {cell.Column}");
+
+            // Evitar procesar si el juego terminó o la celda ya está revelada
+            if (_gameBoard.GameState != GameState.Playing || cell.IsRevealed)
+            {
+                System.Diagnostics.Debug.WriteLine("FlagCell: Acción ignorada");
                 return;
+            }
 
             _gameBoard.ToggleFlag(cell.Row, cell.Column);
         }

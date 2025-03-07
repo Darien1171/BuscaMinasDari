@@ -62,14 +62,14 @@
                                 SelectionMode="None">
                     <CollectionView.ItemTemplate>
                         <DataTemplate x:DataType="models:MinesweeperCell">
-                            <views:CellView Cell="{Binding}">
+                            <views:CellView x:Name="CellViewControl" Cell="{Binding}">
                                 <views:CellView.GestureRecognizers>
-                                    <TapGestureRecognizer 
-                                        Tapped="OnCellTapped"
-                                        NumberOfTapsRequired="1" />
-                                    <TapGestureRecognizer 
-                                        Tapped="OnCellDoubleTapped" 
-                                        NumberOfTapsRequired="2" />
+                                    <TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type local:MainPage}}, Path=CellTapCommand}"
+                                                          CommandParameter="{Binding Source={x:Reference CellViewControl}, Path=Cell}" />
+
+                                    <TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type local:MainPage}}, Path=CellDoubleTapCommand}"
+                                                          CommandParameter="{Binding Source={x:Reference CellViewControl}, Path=Cell}"
+                                                          NumberOfTapsRequired="2" />
                                 </views:CellView.GestureRecognizers>
                             </views:CellView>
                         </DataTemplate>
